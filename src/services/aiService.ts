@@ -12,7 +12,7 @@ import { initFirebase } from '../config/firebase';
  * AI Service for LocalVault Dev:
  * Implements the Hybrid Inference architecture:
  * 1. runLocalTask: Prioritizes on-device execution (Chrome Gemini Nano or Local Heuristic Engine)
- * 2. runCloudDeepAnalysis: Safely transmits sanitized payloads to Firebase Vertex AI or Direct Gemini Cloud API
+ * 2. runCloudDeepAnalysis: Safely transmits sanitized payloads to Firebase AI Logic (GoogleAIBackend + App Check)
  */
 export class AIService {
   /**
