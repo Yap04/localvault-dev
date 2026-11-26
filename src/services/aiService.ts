@@ -175,35 +175,11 @@ Output strictly valid JSON. No markdown ticks.`;
           };
         }
       } catch (cloudErr: any) {
-        console.warn('[AIService] Firebase AI Logic call notice (falling over to Strategy 2):', cloudErr);
+        console.warn('[AIService] Firebase AI Logic call notice (falling over to Local Defense Shield):', cloudErr);
       }
     }
 
-    // Strategy 2: Direct Google Gemini API (Free Tier from Google AI Studio, Zero Billing)
-    const directGeminiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    if (directGeminiKey && directGeminiKey.length > 10) {
-      try {
-        const text = await this.withTimeout(
-          this.callDirectGeminiApi(deepAnalysisPrompt, directGeminiKey),
-          15000,
-          'Direct Gemini API timed out after 15s'
-        );
-        const duration = Math.round(performance.now() - startTime);
-        const parsed = this.parseCloudJsonResponse(text);
-        if (parsed) {
-          return {
-            ...parsed,
-            engine: 'cloud',
-            modelName: 'Gemini 3.5 Flash Lite (Google AI)',
-            executionTimeMs: duration
-          };
-        }
-      } catch (directErr: any) {
-        console.warn('[AIService] Direct Gemini API notice (falling over to Local Defense Shield):', directErr);
-      }
-    }
-
-    // Strategy 3: Realistic Demo Cloud Fallback (Local safe simulation when network/quota is unavailable)
+    // Strategy 2: Realistic Demo Cloud Fallback (Local safe simulation when network/quota is unavailable)
     await new Promise((resolve) => setTimeout(resolve, 800));
     const duration = Math.round(performance.now() - startTime);
 
@@ -277,41 +253,6 @@ Output strictly valid JSON. No markdown ticks.`;
       promise,
       new Promise<T>((_, reject) => setTimeout(() => reject(new Error(errorMsg)), timeoutMs))
     ]);
-  }
-
-  private static async callDirectGeminiApi(prompt: string, apiKey: string): Promise<string> {
-    const candidateModels = ['gemini-3.5-flash-lite', 'gemini-3.8-flash'];
-    let lastError: any = null;
-
-    for (const model of candidateModels) {
-      try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              temperature: 0.2,
-              maxOutputTokens: 600
-            }
-          })
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (text) return text;
-        } else {
-          const errBody = await res.text();
-          console.warn(`[AIService] Model ${model} notice (${res.status}):`, errBody);
-        }
-      } catch (e) {
-        lastError = e;
-      }
-    }
-
-    throw lastError || new Error('Direct Gemini API request failed');
   }
 
   /**
