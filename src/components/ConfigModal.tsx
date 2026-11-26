@@ -9,7 +9,7 @@ interface ConfigModalProps {
   nanoCapabilities: NanoCapabilities;
 }
 
-type ModuleState = 'active' | 'pending' | 'inactive';
+type ModuleState = 'active' | 'pending' | 'error' | 'inactive';
 
 export const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose, nanoCapabilities }) => {
   const [copiedEnv, setCopiedEnv] = useState(false);
@@ -27,6 +27,9 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose, nanoC
   if (!isOpen) return null;
 
   const isConfigured = runtime.isConfigured;
+  const isLocalhost =
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
   const envTemplate = `# LocalVault Dev - Firebase Configuration (.env)
 VITE_FIREBASE_API_KEY=AIzaSyYourActualApiKeyHere
@@ -46,16 +49,20 @@ VITE_FIREBASE_APPCHECK_DEBUG_TOKEN=true`;
       ? 'active'
       : runtime.appCheckStatus === 'initialized' || runtime.appCheckStatus === 'pending'
         ? 'pending'
-        : 'inactive';
+        : runtime.appCheckStatus === 'error'
+          ? 'error'
+          : 'inactive';
 
   const appCheckLabel =
     runtime.appCheckStatus === 'attested'
       ? 'Firebase App Check (Attested)'
       : runtime.appCheckStatus === 'pending'
         ? 'Firebase App Check (Pending Token)'
-        : runtime.appCheckStatus === 'initialized'
-          ? 'Firebase App Check (Verifying...)'
-          : 'Firebase App Check (Not Configured)';
+        : runtime.appCheckStatus === 'error'
+          ? 'Firebase App Check (Verification Error)'
+          : runtime.appCheckStatus === 'initialized'
+            ? 'Firebase App Check (Verifying...)'
+            : 'Firebase App Check (Not Configured)';
 
   const nanoModuleState: ModuleState =
     nanoCapabilities.status === 'readily'
@@ -103,7 +110,7 @@ VITE_FIREBASE_APPCHECK_DEBUG_TOKEN=true`;
                 Firebase & Hybrid AI Configuration
               </h3>
               <p className="text-xs text-zinc-400">
-                Firebase SDK · App Check Debug Provider · Firebase AI Logic (Gemini 3.5 Flash Lite)
+                Firebase SDK · {isLocalhost ? 'App Check Debug Provider' : 'App Check (reCAPTCHA Enterprise)'} · Firebase AI Logic (Gemini 3.5 Flash Lite)
               </p>
             </div>
           </div>
@@ -153,8 +160,17 @@ VITE_FIREBASE_APPCHECK_DEBUG_TOKEN=true`;
                   ? 'bg-emerald-500/20 text-emerald-400'
                   : state === 'pending'
                     ? 'bg-amber-500/20 text-amber-400'
-                    : 'bg-zinc-800 text-zinc-500';
-              const icon = state === 'active' ? '✓' : state === 'pending' ? '⋯' : '—';
+                    : state === 'error'
+                      ? 'bg-rose-500/20 text-rose-400'
+                      : 'bg-zinc-800 text-zinc-500';
+              const icon =
+                state === 'active'
+                  ? '✓'
+                  : state === 'pending'
+                    ? '⋯'
+                    : state === 'error'
+                      ? '!'
+                      : '—';
               return (
                 <div
                   key={label}
