@@ -31,7 +31,7 @@ export const isFirebaseConfigured = (): boolean => {
   );
 };
 
-export type AppCheckStatus = 'uninitialized' | 'initialized' | 'attested' | 'pending';
+export type AppCheckStatus = 'uninitialized' | 'initialized' | 'attested' | 'pending' | 'error';
 
 let app: FirebaseApp | null = null;
 let appCheck: AppCheck | null = null;
@@ -116,8 +116,13 @@ export const initFirebase = (): {
               }
             })
             .catch((attestErr) => {
-              appCheckStatus = 'pending';
-              console.warn('[Firebase App Check] Attestation pending registration or verification:', attestErr);
+              appCheckStatus = isLocalhost ? 'pending' : 'error';
+              console.warn(
+                isLocalhost
+                  ? '[Firebase App Check] Attestation pending debug token registration in Firebase Console:'
+                  : '[Firebase App Check] Attestation verification error:',
+                attestErr
+              );
             });
         }
       } catch (appCheckErr) {
