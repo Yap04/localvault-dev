@@ -1,5 +1,12 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { initializeAppCheck, ReCaptchaV3Provider, AppCheck, getToken } from 'firebase/app-check';
+import {
+  initializeAppCheck,
+  ReCaptchaEnterpriseProvider,
+  ReCaptchaV3Provider,
+  CustomProvider,
+  AppCheck,
+  getToken
+} from 'firebase/app-check';
 import { getAI, getGenerativeModel, GoogleAIBackend, GenerativeModel, AI } from 'firebase/ai';
 
 // Firebase Project Credentials
@@ -67,30 +74,52 @@ export const initFirebase = (): {
       app = getApp();
     }
 
-    // Initialize App Check with Debug Provider for localhost
+    // Initialize App Check (Debug Provider on localhost, reCAPTCHA Enterprise in production)
     if (app && !appCheck && typeof window !== 'undefined') {
       try {
-        (window as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-        const siteKey = import.meta.env.VITE_RECAPTCHA_V3_SITE_KEY || '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';
-        appCheck = initializeAppCheck(app, {
-          provider: new ReCaptchaV3Provider(siteKey),
-          isTokenAutoRefreshEnabled: true
-        });
-        appCheckStatus = 'initialized';
-        console.log('[Firebase App Check] Initialized with Debug Provider.');
+        const isLocalhost =
+          window.location.hostname === 'localhost' ||
+          window.location.hostname === '127.0.0.1';
+        if (isLocalhost) {
+          (window as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+        }
 
-        // Actively attest token with Firebase App Check backend
-        getToken(appCheck)
-          .then((result) => {
-            if (result && result.token) {
-              appCheckStatus = 'attested';
-              console.log('🛡️ [Firebase App Check] Successfully verified and attested with Firebase backend!');
-            }
-          })
-          .catch((attestErr) => {
-            appCheckStatus = 'pending';
-            console.warn('[Firebase App Check] Attestation pending registration in Firebase Console:', attestErr);
+        const enterpriseKey = import.meta.env.VITE_RECAPTCHA_ENTERPRISE_SITE_KEY || '';
+        const siteKey = enterpriseKey || import.meta.env.VITE_RECAPTCHA_V3_SITE_KEY || '';
+
+        if (siteKey || isLocalhost) {
+          const provider = enterpriseKey
+            ? new ReCaptchaEnterpriseProvider(enterpriseKey)
+            : siteKey
+              ? new ReCaptchaV3Provider(siteKey)
+              : new CustomProvider({
+                  getToken: async () => ({
+                    token: 'localhost-debug-provider',
+                    expireTimeMillis: Date.now() + 60 * 60 * 1000
+                  })
+                });
+          appCheck = initializeAppCheck(app, {
+            provider,
+            isTokenAutoRefreshEnabled: true
           });
+          appCheckStatus = 'initialized';
+          console.log(
+            `[Firebase App Check] Initialized with ${isLocalhost ? 'Debug Provider' : 'reCAPTCHA Enterprise'}.`
+          );
+
+          // Actively attest token with Firebase App Check backend
+          getToken(appCheck)
+            .then((result) => {
+              if (result && result.token) {
+                appCheckStatus = 'attested';
+                console.log('🛡️ [Firebase App Check] Successfully verified and attested with Firebase backend!');
+              }
+            })
+            .catch((attestErr) => {
+              appCheckStatus = 'pending';
+              console.warn('[Firebase App Check] Attestation pending registration or verification:', attestErr);
+            });
+        }
       } catch (appCheckErr) {
         console.warn('[Firebase App Check] Init notice:', appCheckErr);
       }
