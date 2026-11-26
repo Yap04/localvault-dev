@@ -37,10 +37,8 @@ VITE_FIREBASE_MESSAGING_SENDER_ID=123456789012
 VITE_FIREBASE_APP_ID=1:123456789012:web:abcdef123456
 VITE_FIREBASE_MEASUREMENT_ID=G-XXXXXXXXXX
 
-# Optional: Google AI Studio Gemini API Key (Tier 2 fallback gateway)
-VITE_GEMINI_API_KEY=your-gemini-api-key-here
-
-# Firebase App Check Local Debug Token
+# Firebase App Check (reCAPTCHA Enterprise Site Key for Hosting & Local Debug Token)
+VITE_RECAPTCHA_ENTERPRISE_SITE_KEY=your-recaptcha-enterprise-site-key
 VITE_FIREBASE_APPCHECK_DEBUG_TOKEN=true`;
 
   const appCheckModuleState: ModuleState =

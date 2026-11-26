@@ -87,10 +87,9 @@ Every day, developers and operations engineers paste crash dumps, stack traces, 
 * **🛡️ 0-Leakage Pre-flight Security Barrier**:
   * High-risk credentials (OpenAI/Anthropic API keys, JWT tokens, AWS/GCP secrets, DB URIs, Phone numbers, Emails, Internal IPs) are replaced before egress.
   * A second pre-flight gate (`LocalSanitizer.verifyZeroLeakage`) aborts network calls if any raw token is detected.
-* **🔁 Resilient Multi-Tier Cloud Failover**:
-  1. *Tier 1*: Firebase AI Logic SDK (`firebase/ai`).
-  2. *Tier 2*: Direct Google AI Studio Gateway (`generativelanguage.googleapis.com`) if network congestion or timeouts occur.
-  3. *Tier 3*: Local Demo Fallback Shield for offline/airplane mode with zero disruption.
+* **🔁 Resilient Cloud Failover**:
+  1. *Primary*: Firebase AI Logic SDK (`firebase/ai`) with App Check attestation.
+  2. *Fallback*: Local Demo Fallback Shield for offline/airplane mode with zero disruption.
 * **🎨 Linear / Raycast Aesthetic Workbench**:
   * Split-screen interface with instant visual Diff inspection.
   * Interactive "Reveal/Hide Raw Secrets" toggle with container truncation to avoid overflow.
@@ -162,7 +161,7 @@ VITE_FIREBASE_STORAGE_BUCKET=your-project-id.firebasestorage.app
 VITE_FIREBASE_MESSAGING_SENDER_ID=123456789012
 VITE_FIREBASE_APP_ID=1:123456789012:web:abcdef123456
 VITE_FIREBASE_MEASUREMENT_ID=G-XXXXXXXXXX
-VITE_GEMINI_API_KEY=your-gemini-api-key-here
+VITE_RECAPTCHA_ENTERPRISE_SITE_KEY=your-recaptcha-enterprise-site-key
 VITE_FIREBASE_APPCHECK_DEBUG_TOKEN=true
 ```
 2. Enable **Firebase AI Logic API** (`firebasevertexai.googleapis.com`) in your Google Cloud Console.
